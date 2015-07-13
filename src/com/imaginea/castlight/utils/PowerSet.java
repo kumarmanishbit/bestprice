@@ -5,25 +5,35 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.imaginea.castlight.beans.Item;
+
 public class PowerSet {
 
-	public <T> Set<Set<T>> powerSet(Set<T> originalSet) {
-		Set<Set<T>> sets = new HashSet<Set<T>>();
-		if (originalSet.isEmpty()) {
-			sets.add(new HashSet<T>());
-			return sets;
+	
+	
+	private static void getSubsets(List<Item> superSet, int k, int idx, Set<Item>  current,
+			List<Set<Item>> solution) {
+		// successful stop clause
+		if (current.size() == k) {
+			solution.add(new HashSet<>(current));
+			return;
 		}
-		List<T> list = new ArrayList<T>(originalSet);
-		T head = list.get(0);
-		Set<T> rest = new HashSet<T>(list.subList(1, list.size()));
-		for (Set<T> set : powerSet(rest)) {
-			Set<T> newSet = new HashSet<T>();
-			newSet.add(head);
-			newSet.addAll(set);
-			sets.add(newSet);
-			sets.add(set);
-		}
-		return sets;
+		// unseccessful stop clause
+		if (idx == superSet.size())
+			return;
+		Item x = superSet.get(idx);
+		current.add(x);
+		// "guess" x is in the subset
+		getSubsets(superSet, k, idx + 1, current, solution);
+		current.remove(x);
+		// "guess" x is not in the subset
+		getSubsets(superSet, k, idx + 1, current, solution);
+	}
+
+	public static List<Set<Item>> getSubsets(List<Item> superSet, int k) {
+		List<Set<Item>> res = new ArrayList<>();
+		getSubsets(superSet, k, 0, new HashSet<Item>(), res);
+		return res;
 	}
 
 }

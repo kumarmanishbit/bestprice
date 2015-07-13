@@ -4,7 +4,6 @@ import java.util.List;
 
 public class Food {
 
-	
 	private List<String> listOfFood;
 
 	public List<String> getListOfFood() {
@@ -14,4 +13,5 @@ public class Food {
 	public void setListOfFood(List<String> listOfFood) {
 		this.listOfFood = listOfFood;
 	}
+
 }

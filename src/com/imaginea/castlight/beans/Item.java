@@ -14,6 +14,7 @@ public class Item {
 		this.itemName = itemName;
 	}
 
+
 	public double getItemPrice() {
 		return itemPrice;
 	}

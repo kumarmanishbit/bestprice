@@ -4,14 +4,19 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.imaginea.castlight.beans.Food;
 import com.imaginea.castlight.beans.Item;
 import com.imaginea.castlight.beans.Restaurant;
 import com.imaginea.castlight.utils.FoodProcessor;
+import com.imaginea.castlight.utils.PowerSet;
 
 public class JurgensvilleAdminManager {
 
@@ -34,7 +39,7 @@ public class JurgensvilleAdminManager {
 		try {
 			String line;
 
-			br = new BufferedReader(new FileReader("sample_data.csv"));
+			br = new BufferedReader(new FileReader(args[0].trim()));
 
 			List<Item> items = null;
 			List<Item> tmp = null;
@@ -84,59 +89,109 @@ public class JurgensvilleAdminManager {
 			}
 		}
 
+		/**
+		 * 
+		 * Processing starts here.
+		 * 
+		 */
+
 		List<String> foodToBeOrdered = new ArrayList<String>();
 
-		for (int i = 0; i < args.length; i++) {
+		for (int i = 1; i < args.length; i++) {
 			foodToBeOrdered.add(args[i].trim());
 		}
 
 		FoodProcessor processor = new FoodProcessor();
 		Map<Integer, Restaurant> rest = processor.getAvailableItems(foodToBeOrdered, resturantList);
-
-		Map<Integer, Double> finalPrice = new HashMap<Integer, Double>();
-
-		System.out.println("Number of Restaurant found "+ rest.size());
 		
-		for(int i=0;i<rest.get(2).getItemsList().size();i++)
-		System.out.println(rest.get(1).getItemsList().get(i).getItemName().getListOfFood());
 		
-		double tmpPrice = 0.00d;
-		double minPrice = Double.MAX_VALUE;
-		for (Map.Entry<Integer, Restaurant> res : rest.entrySet()) {
-
-			tmpPrice = 0.00d;
-			for (Item temp : res.getValue().getItemsList()) {
-
-				minPrice = Double.MAX_VALUE;
-
-				if (temp.getItemName().getListOfFood().containsAll(foodToBeOrdered)) {
-					tmpPrice += temp.getItemPrice();
-					
-				}
-				System.out.println(temp.getItemName().getListOfFood() + "  " +temp.getItemPrice());
-				if (minPrice >= tmpPrice) {
-					minPrice = tmpPrice;
-				}
-			}
-			finalPrice.put(res.getKey(), minPrice);
-		}
 		if (rest.size() == 0) {
 			System.out.println("Nil");
 			System.exit(0);
 		}
 
-		Integer minKey = null;
-		Double minValue = Double.MAX_VALUE;
-		for (Map.Entry<Integer, Double> entry : finalPrice.entrySet()) {
-			Double value = entry.getValue();
-			if (value < minValue) {
-				minKey = entry.getKey();
-				minValue = value;
+		Iterator<Restaurant> foundRestaurant = rest.values().iterator();
+
+		int numberOfFoodToBeOrdered = foodToBeOrdered.size();
+
+		List<Set<Item>> maniItems = new ArrayList<>();
+
+		Map<Integer, Double> minPriceRestaurant = new HashMap<Integer, Double>();
+		
+		Set<Double> allItemPrice = new HashSet<Double>();
+		
+		while (foundRestaurant.hasNext()) {
+
+			maniItems = new ArrayList<>();
+			
+			int restID=foundRestaurant.next().getResturantId();
+			
+			for (int i = numberOfFoodToBeOrdered; i > 0; i--) {
+
+				maniItems.addAll(PowerSet.getSubsets(rest.get(restID).getItemsList(),
+						i));
+
 			}
+			for (int j = 0; j < maniItems.size(); j++) {
+
+				allItemPrice.add(findFood(maniItems.get(j), foodToBeOrdered));
+				
+
+			}
+			minPriceRestaurant.put(restID, Collections.min(allItemPrice));
+
 		}
 
-		System.out.println("minKey = " + minKey + " minValue=" + minValue);
+		/**
+		 * Finding minimum amount
+		 */
 
+		double minPrice = Double.MAX_VALUE;
+		
+		Integer restaurantID = null;
+		for (Map.Entry<Integer, Double> entry : minPriceRestaurant.entrySet()) {
+			Double value = entry.getValue();
+			if (value < minPrice) {
+				restaurantID = entry.getKey();
+				minPrice = value;
+			}
+		}
+		System.out.println( restaurantID + ", " + minPrice);
 	}
 
+	public static Double findFood(Set<Item> items, List<String> foodToBeOrdered) {
+		Iterator<Item> iterator;
+		List<String> item = new ArrayList<String>();
+		Set<String> foundItem = new HashSet<>();
+		iterator = items.iterator();
+
+		Set<Double> allItemPrice = new HashSet<Double>();
+		Item tmpItem;
+		double price = 0.00d;
+
+
+		while (iterator.hasNext()) {
+
+			tmpItem = iterator.next();
+
+			
+			item = tmpItem.getItemName().getListOfFood();
+
+			price += tmpItem.getItemPrice();
+
+			List<String> common = new ArrayList<String>(item);
+			common.retainAll(foodToBeOrdered);
+			foundItem.addAll(common);
+
+	
+		}
+
+		if (foundItem.size() == foodToBeOrdered.size()) {
+			allItemPrice.add(price);
+			return Collections.min(allItemPrice);
+		}
+
+		return Double.MAX_VALUE;
+
+	}
 }
